@@ -25,7 +25,19 @@ class MClient {
     Map<String, dynamic>? reqcopyWith,
     rhttp.ClientSettings? settings,
   }) {
+    if (Platform.isAndroid) {
+      return defaultClient;
+    }
+
+    final usesDynamicDns = settings?.dnsSettings is DynamicDnsSettings;
+
     if (!(reqcopyWith?["useDartHttpClient"] ?? false)) {
+      // Dynamic DNS relies on a Dart callback. Creating the Rust client via the
+      // sync FRB API can abort on Android worker threads during app startup.
+      if (usesDynamicDns) {
+        return defaultClient;
+      }
+
       try {
         settings ??= rhttp.ClientSettings(
           throwOnStatusCode: false,
